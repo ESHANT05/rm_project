@@ -16,6 +16,7 @@ artifacts
 rgcl_trained_models_and_results/
 src_baseline_backup/
 slide_images/
+ppt_assets/
 fig*.png
 table*.png
 test_fig*.png
