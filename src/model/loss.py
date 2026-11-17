@@ -17,9 +17,10 @@ def compute_loss(batch,
     batch_size = len(ids)
     image_feats = batch["image_feats"].to(args.device)
     text_feats = batch["text_feats"].to(args.device)
+    knowledge_feats = batch["knowledge_feats"].to(args.device) if "knowledge_feats" in batch else None
     labels = batch["labels"].to(args.device)
     model.train()
-    output, feats = model(image_feats, text_feats, return_embed=True)
+    output, feats = model(image_feats, text_feats, knowledge_feats=knowledge_feats, return_embed=True)
 
     # We construct a matrix for label coincidences (Mask matrix for later loss computation)
     # 1 if the labels are the same (positive), 0 otherwise (negative)

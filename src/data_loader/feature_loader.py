@@ -4,7 +4,10 @@ import sys
 import csv
 from tqdm import tqdm
 import numpy as np
-csv.field_size_limit(sys.maxsize)
+try:
+    csv.field_size_limit(sys.maxsize)
+except OverflowError:
+    csv.field_size_limit(2147483647)
 import json
 
 

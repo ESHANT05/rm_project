@@ -84,19 +84,16 @@ def CLIP2Dataloader(*datasets, batch_size=128, return_dataset=False, normalize=F
     dataset_list = []
     for index, dataset in enumerate(datasets):
 
-        ids,  img_feats, text_feats, labels = dataset
-        # Modality fusion is something we might want to move to modelling to save memory
-        # For larger dataset, this causes OOM
-        # Solved, for hate-clipper, we do modaility fusion in the model by passing
-        # argument "separate" to parameter fusion_mode, the feats will be a
-        # 3D tensor with shape (batch_size, 2, feat_dim)
-        # feats = modality_fusion(img_feats.cpu().float(), text_feats.cpu().float(), fusion_mode=fusion_mode, hf=hf)
+        if len(dataset) >= 5:
+            ids, img_feats, text_feats, labels, knowledge_feats = dataset[:5]
+            knowledge_feats = knowledge_feats.float()
+        else:
+            ids, img_feats, text_feats, labels = dataset[:4]
+            knowledge_feats = None
 
         feats = (img_feats.float(), text_feats.float())
 
-        # change datatype to float32
-        # feats = feats.float()
-        dataset = RACDataset(feats, ids, labels)
+        dataset = RACDataset(feats, ids, labels, knowledge_feats=knowledge_feats)
         if return_dataset:
             dataset_list.append(dataset)
         if index == 0:
@@ -117,15 +114,24 @@ def CLIP2Dataloader(*datasets, batch_size=128, return_dataset=False, normalize=F
 
 
 class RACDataset(Dataset):
-    def __init__(self, feats, ids, labels):
+    def __init__(self, feats, ids, labels, knowledge_feats=None):
         self.image_feats = feats[0]
         self.text_feats = feats[1]
+        self.knowledge_feats = knowledge_feats
 
-        self.ids = ids
+        self.ids = [str(x.item() if hasattr(x, "item") else x) for x in ids]
         self.labels = labels
 
     def __getitem__(self, index):
-        return {"ids": self.ids[index], "image_feats": self.image_feats[index], "text_feats": self.text_feats[index], "labels": self.labels[index]}
+        item = {
+            "ids": str(self.ids[index]),
+            "image_feats": self.image_feats[index],
+            "text_feats": self.text_feats[index],
+            "labels": self.labels[index],
+        }
+        if self.knowledge_feats is not None:
+            item["knowledge_feats"] = self.knowledge_feats[index]
+        return item
 
     def __len__(self):
         return len(self.ids)

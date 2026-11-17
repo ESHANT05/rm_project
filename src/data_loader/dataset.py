@@ -119,9 +119,12 @@ def get_values_from_gt(dataset, split):
     
     
     if dataset == "FB":
-        list_label = gt_df["label"].to_list()
+        if "label" in gt_df.columns:
+            list_label = gt_df["label"].to_list()
+        else:
+            list_label = [0] * len(list_ids)
         for img_id in list_ids:
-            list_image_path.append("./data/image/" + dataset + "/All/" + img_id + ".png")
+            list_image_path.append("./data/image/" + dataset + "/All/" + str(img_id).zfill(5) + ".png")
     elif dataset == "HarMeme" or dataset == "HarmP":
         print(dataset)
         list_label = gt_df["labels"]
@@ -134,7 +137,7 @@ def get_values_from_gt(dataset, split):
         assert len(list_label_converted) == len(list_label)
         list_label = list_label_converted
         for img_id in list_ids:
-            list_image_path.append("./data/image/" + dataset + "/All/" + img_id + ".png")
+            list_image_path.append("./data/image/" + dataset + "/All/" + str(img_id).zfill(5) + ".png")
     elif dataset == "HarmC" :
         # The HarmC is the same as HarMeme, but here we refer to 3 classes
         # 0: not harmful, 1: 
@@ -150,7 +153,7 @@ def get_values_from_gt(dataset, split):
         assert len(list_label_converted) == len(list_label)
         list_label = list_label_converted
         for img_id in list_ids:
-            list_image_path.append("./data/image/" + dataset + "/All/" + img_id + ".png")
+            list_image_path.append("./data/image/" + dataset + "/All/" + str(img_id) + ".png")
     elif dataset == "Propaganda":
         #list_label = gt_df["label"].to_list()
         list_image = gt_df["image"].to_list()
@@ -542,6 +545,30 @@ def concate_all_splits_FB(train, dev, test_seen, test_unseen):
     return [all_ids,  all_img_feats, all_text_feats, all_labels]
 
 
+def _resolve_embedding_path(path):
+    """Automatically resolve HuggingFace-formatted embedding filenames (replacing '/' with '_' and adding '_HF')."""
+    import os
+    if os.path.exists(path):
+        return path
+    # Try replacing '/' in the filename portion with '_' and appending '_HF'
+    # Example: .../FB/train_openai/clip-vit-large-patch14-336.pt -> .../FB/train_openai_clip-vit-large-patch14-336_HF.pt
+    parts = path.replace("\\", "/").split("/")
+    if len(parts) >= 2:
+        cand1 = "/".join(parts[:-2] + [parts[-2] + "_" + parts[-1]])
+        if os.path.exists(cand1):
+            return cand1
+        cand2 = cand1.replace(".pt", "_HF.pt")
+        if os.path.exists(cand2):
+            return cand2
+    cand3 = path.replace(".pt", "_HF.pt")
+    if os.path.exists(cand3):
+        return cand3
+    raise FileNotFoundError(
+        f"Could not find CLIP embedding file at '{path}' (also checked HF variants). "
+        f"Make sure CLIP embeddings are generated in data/CLIP_Embedding/."
+    )
+
+
 def load_feats_split(path, dataset=None):
     """
     load features for FB dataset for each dataset splits
@@ -553,15 +580,19 @@ def load_feats_split(path, dataset=None):
         labels: ground truth labels
     The features are extracted and defined in generate_CLIP_embedding.py
     """
-    dict = torch.load(path)
+    resolved_path = _resolve_embedding_path(path)
+    dict = torch.load(resolved_path, map_location="cpu", weights_only=False)
     ids = dict["ids"]
-    # flatten the python 2d ids list (batch size as the row) to a 1d list
-    ids = [item for sublist in ids for item in sublist]
-    
-        
-    # ids map the order of the image to image ids
-    # ids_dics maps the image ids to the order of the image
-    #ids_dics = {k: v for v, k in enumerate(ids)}
+    # flatten the 2d ids (list of lists or list of batch Tensors) to a 1d list of strings
+    if len(ids) > 0 and isinstance(ids[0], (list, tuple, torch.Tensor)):
+        flat = []
+        for sublist in ids:
+            if isinstance(sublist, torch.Tensor):
+                flat.extend(sublist.tolist() if sublist.ndim > 0 else [sublist.item()])
+            else:
+                flat.extend(sublist)
+        ids = flat
+    ids = [str(x.item() if hasattr(x, "item") else x) for x in ids]
 
     img_feats = dict["img_feats"]
     text_feats = dict["text_feats"]
@@ -569,12 +600,62 @@ def load_feats_split(path, dataset=None):
 
     if dataset == "MMHS":
         for index, label in enumerate(labels):
-
             if label > 0:
-
                 labels[index] = 1
 
     return [ids, img_feats, text_feats, labels]
+
+
+def load_knowledge_for_split(split_data, knowledge_base_path, dataset, split_name, model):
+    """Loads pre-extracted 768-d knowledge embeddings and aligns them by sample ID."""
+    import os
+    ids, img_feats, text_feats, labels = split_data[:4]
+    model_slug = str(model).replace("/", "_")
+    # Handle naming differences between HarMeme (dev/test) and FB (dev_seen/test_seen)
+    candidates = [
+        os.path.join(knowledge_base_path, dataset, f"{split_name}_{model_slug}_HF.pt"),
+        os.path.join(knowledge_base_path, dataset, f"{split_name}_{model_slug}.pt"),
+    ]
+    if split_name == "dev_seen":
+        candidates.append(os.path.join(knowledge_base_path, dataset, f"dev_{model_slug}_HF.pt"))
+    if split_name == "test_seen":
+        candidates.append(os.path.join(knowledge_base_path, dataset, f"test_{model_slug}_HF.pt"))
+
+    k_path = None
+    for c in candidates:
+        if os.path.exists(c):
+            k_path = c
+            break
+    if k_path is None:
+        raise FileNotFoundError(f"Knowledge embedding not found for {dataset}/{split_name}. Checked: {candidates}")
+
+    k_dict = torch.load(k_path, map_location="cpu", weights_only=False)
+    k_ids = [str(x.item() if hasattr(x, "item") else x) for x in k_dict["ids"]]
+    k_feats = k_dict["knowledge_feats"]
+
+    # Map id -> vector (also handle zero-padded numeric IDs like '08291' vs '8291')
+    id_to_vec = {}
+    for kid, vec in zip(k_ids, k_feats):
+        id_to_vec[kid] = vec
+        if kid.isdigit():
+            id_to_vec[str(int(kid))] = vec
+
+    dim = k_feats.shape[1]
+    aligned = []
+    matched = 0
+    for sid in ids:
+        sid = str(sid.item() if hasattr(sid, "item") else sid)
+        vec = id_to_vec.get(sid)
+        if vec is None and sid.isdigit():
+            vec = id_to_vec.get(str(int(sid)))
+        if vec is not None:
+            aligned.append(vec)
+            matched += 1
+        else:
+            aligned.append(torch.zeros(dim))
+    knowledge_tensor = torch.stack(aligned, dim=0)
+    print(f"[INFO] Loaded knowledge for {dataset}/{split_name}: {matched}/{len(ids)} IDs matched, shape={knowledge_tensor.shape}")
+    return [ids, img_feats, text_feats, labels, knowledge_tensor]
 
 def load_feats_FB(path, model):
     dataset = "FB"

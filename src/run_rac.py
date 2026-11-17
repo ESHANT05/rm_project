@@ -6,7 +6,7 @@ from model.loss import compute_loss
 import argparse
 import wandb
 from data_loader.rac_dataloader import CLIP2Dataloader
-from data_loader.dataset import load_feats_from_CLIP
+from data_loader.dataset import load_feats_from_CLIP, load_knowledge_for_split
 
 from utils.metrics import eval_and_save_epoch_end, compute_metrics_retrieval
 from tqdm import tqdm
@@ -33,6 +33,12 @@ def parse_args():
     # The threshold for the similarity score for RAC
     arg_parser.add_argument("--similarity_threshold", type=float, default=-1.)
     arg_parser.add_argument("--fusion_mode", type=str, default="concat")
+    arg_parser.add_argument(
+        "--use_knowledge",
+        type=lambda x: (str(x).lower() == "true"),
+        default=False,
+        help="Whether to fuse 768-d Knowledge_Embedding rationales via KnowledgeGatedFusionBlock",
+    )
 
     arg_parser.add_argument(
         "--topk", type=int, default=5, help="Retrieve at most k pairs for validation"
@@ -284,8 +290,10 @@ def model_pass(
                 train_feats = train_feats.detach()
                 train_labels = train_labels.detach()"""
             if not((args.no_hard_negatives == 0 and args.no_pseudo_gold_positives == 0) or args.sparse_dictionary is not None): 
-                train_feats = train_feats.detach()
-                train_labels = train_labels.detach()
+                if hasattr(train_feats, "detach"):
+                    train_feats = train_feats.detach()
+                if hasattr(train_labels, "detach"):
+                    train_labels = train_labels.detach()
             optimizer.zero_grad()
             total_loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -491,6 +499,12 @@ def main(args):
         train, dev, test_seen = load_feats_from_CLIP(
             os.path.join(args.path, "CLIP_Embedding"), args.dataset, args.model
         )
+
+    if args.use_knowledge or args.fusion_mode == "k_carn":
+        knowledge_base = os.path.join(args.path, "Knowledge_Embedding")
+        train = load_knowledge_for_split(train, knowledge_base, args.dataset, "train", args.model)
+        dev = load_knowledge_for_split(dev, knowledge_base, args.dataset, "dev_seen", args.model)
+        test_seen = load_knowledge_for_split(test_seen, knowledge_base, args.dataset, "test_seen", args.model)
 
     (train_dl, dev_dl, test_seen_dl), (
         train_set,

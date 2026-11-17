@@ -77,12 +77,34 @@ class classifier_hateClipper(nn.Module):
         self.text_proj = nn.Sequential(nn.Linear(text_dim, map_dim), nn.Dropout(dropout[0]))
         #self.relu_after_fusion = nn.ReLU()
         # Modality fusion
+        self.use_knowledge = bool(getattr(args, 'use_knowledge', False)) or (fusion_mode == 'k_carn')
         if fusion_mode == 'concat':
             input_shape = map_dim * 2
         elif fusion_mode == 'align':
             input_shape = map_dim
         elif fusion_mode == 'cross':
             input_shape = map_dim ** 2
+        elif fusion_mode in ['cross_attention', 'bi_cross_attn', 'k_carn']:
+            from model.cross_attention_fusion import BidirectionalCrossAttention, KnowledgeGatedFusionBlock
+            self.cross_attn = BidirectionalCrossAttention(embed_dim=map_dim, num_heads=8, dropout=dropout[0] if dropout else 0.1)
+            input_shape = map_dim * 2
+            if self.use_knowledge:
+                knowledge_dim = getattr(args, 'knowledge_dim', 768)
+                self.knowledge_fusion = KnowledgeGatedFusionBlock(
+                    fused_dim=input_shape,
+                    knowledge_dim=knowledge_dim,
+                    num_heads=8,
+                    dropout=dropout[0] if dropout else 0.1,
+                )
+        if self.use_knowledge and not hasattr(self, 'knowledge_fusion'):
+            from model.cross_attention_fusion import KnowledgeGatedFusionBlock
+            knowledge_dim = getattr(args, 'knowledge_dim', 768)
+            self.knowledge_fusion = KnowledgeGatedFusionBlock(
+                fused_dim=input_shape,
+                knowledge_dim=knowledge_dim,
+                num_heads=8,
+                dropout=dropout[0] if dropout else 0.1,
+            )
         
         layers = list()
         # Append the relu after the modality fusion
@@ -107,7 +129,7 @@ class classifier_hateClipper(nn.Module):
         else:
             print("Unknown dataset: {} using binary classification by default")
             self.output_layer = nn.Linear(proj_dim, 1)
-    def forward(self,img_feats, text_feats, return_embed=False):
+    def forward(self, img_feats, text_feats, knowledge_feats=None, return_embed=False):
         img_feats = self.img_proj(img_feats)
         text_feats = self.text_proj(text_feats)
         
@@ -120,6 +142,11 @@ class classifier_hateClipper(nn.Module):
             x = torch.mul(img_feats, text_feats)
         elif self.fusion_mode == 'cross':
             x = torch.bmm(img_feats.unsqueeze(2), text_feats.unsqueeze(1)).flatten(1,2)
+        elif self.fusion_mode in ['cross_attention', 'bi_cross_attn', 'k_carn']:
+            x = self.cross_attn(img_feats, text_feats)
+
+        if self.use_knowledge and knowledge_feats is not None and hasattr(self, 'knowledge_fusion'):
+            x = self.knowledge_fusion(x, knowledge_feats)
         
         # For embedding, we don't need the relu and dropout
         embed = self.mlp[:-2](x)

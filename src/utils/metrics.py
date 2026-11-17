@@ -384,15 +384,16 @@ def iterate_dl(args, dl, classifier):
         ids = []
         for step, batch in enumerate(dl):
             ids.extend(batch["ids"])
+            k_feats = batch["knowledge_feats"].to(args.device) if "knowledge_feats" in batch else None
             if step == 0:
                 labels = batch["labels"].detach().cpu()
-                predicted, embed = classifier(batch["image_feats"].to(args.device),batch["text_feats"].to(args.device), return_embed=True)
+                predicted, embed = classifier(batch["image_feats"].to(args.device),batch["text_feats"].to(args.device), knowledge_feats=k_feats, return_embed=True)
                 predicted = predicted.detach().cpu()
                 embed = embed.detach().cpu()
                 
             else:
                 labels = torch.cat((labels, batch["labels"].detach().cpu()), dim=0)
-                new_pred, new_embed = classifier(batch["image_feats"].to(args.device),batch["text_feats"].to(args.device), return_embed=True)
+                new_pred, new_embed = classifier(batch["image_feats"].to(args.device),batch["text_feats"].to(args.device), knowledge_feats=k_feats, return_embed=True)
                 predicted = torch.cat((predicted, new_pred.detach().cpu() ), dim=0)
                 embed = torch.cat((embed, new_embed.detach().cpu() ), dim=0)
     return ids, labels, predicted, embed

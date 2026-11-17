@@ -186,7 +186,8 @@ def retrieve_evaluate_RAC(
         # Record the number of images retrieved for each query
         no_retrieved = len(retrieved_ids)
 
-        logging_dict[evaluate_ids[i]] = {
+        eval_key = str(evaluate_ids[i].item() if hasattr(evaluate_ids[i], 'item') else evaluate_ids[i])
+        logging_dict[eval_key] = {
             "no_retrieved": no_retrieved,
             "retrieved_ids": retrieved_ids,
             "retrieved_scores": retrieved_scores,
@@ -319,8 +320,9 @@ def retrieve_evaluate_RAC_(
         train_dl_is_list = False
     for i, batch in enumerate(train_dl):
         train_ids.extend(batch["ids"])
+        k_feats = batch["knowledge_feats"].to(args.device) if "knowledge_feats" in batch else None
         out, all_feats = model(batch["image_feats"].to(
-            'cuda'), batch["text_feats"].to('cuda'), return_embed=True)
+            args.device), batch["text_feats"].to(args.device), knowledge_feats=k_feats, return_embed=True)
         if i == 0:
 
             train_feats = all_feats
@@ -338,8 +340,9 @@ def retrieve_evaluate_RAC_(
         for train_dl_ in train_dl_rest:
             for batch in train_dl_:
                 train_ids.extend(batch["ids"])
+                k_feats = batch["knowledge_feats"].to(args.device) if "knowledge_feats" in batch else None
                 out, all_feats = model(batch["image_feats"].to(
-                    'cuda'), batch["text_feats"].to('cuda'), return_embed=True)
+                    args.device), batch["text_feats"].to(args.device), knowledge_feats=k_feats, return_embed=True)
 
                 # For GPU implementation
                 train_feats = torch.cat((train_feats, all_feats), dim=0)
@@ -355,8 +358,9 @@ def retrieve_evaluate_RAC_(
     evaluate_labels = np.array([[]])
     for i, batch in enumerate(evaluate_dl):
         evaluate_ids.extend(batch["ids"])
+        k_feats = batch["knowledge_feats"].to(args.device) if "knowledge_feats" in batch else None
         out, all_feats = model(batch["image_feats"].to(
-            'cuda'), batch["text_feats"].to('cuda'), return_embed=True)
+            args.device), batch["text_feats"].to(args.device), knowledge_feats=k_feats, return_embed=True)
         if i == 0:
 
             evaluate_feats = all_feats
@@ -419,7 +423,8 @@ def retrieve_evaluate_RAC_(
         # Record the number of images retrieved for each query
         no_retrieved = len(retrieved_ids)
 
-        logging_dict[evaluate_ids[i]] = {
+        eval_key = str(evaluate_ids[i].item() if hasattr(evaluate_ids[i], 'item') else evaluate_ids[i])
+        logging_dict[eval_key] = {
             "no_retrieved": no_retrieved,
             "retrieved_ids": retrieved_ids,
             "retrieved_scores": retrieved_scores,

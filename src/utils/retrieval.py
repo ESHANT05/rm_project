@@ -327,13 +327,14 @@ def dense_retrieve_hard_negatives_pseudo_positive(
     # print("start to get the training features for retrieval")
     # If we set the train_feats and train_labels to None in upper level,
     # We will reindex the searching index with updated training data
-    if train_feats == None or train_labels == None:
+    if train_feats is None or train_labels is None:
         #print("Start to reindex dense retrieval index")
         for i, batch in enumerate(train_dl):
             image_feats = batch["image_feats"].to(args.device)
             text_feats = batch["text_feats"].to(args.device)
-            # Image+Text features after modality fusion
-            _, all_feats = model(image_feats, text_feats, return_embed=True)
+            knowledge_feats = batch["knowledge_feats"].to(args.device) if "knowledge_feats" in batch else None
+            # Image+Text(+Knowledge) features after modality fusion
+            _, all_feats = model(image_feats, text_feats, knowledge_feats=knowledge_feats, return_embed=True)
             if i == 0:
 
                 if args.Faiss_GPU:
@@ -388,9 +389,19 @@ def dense_retrieve_hard_negatives_pseudo_positive(
             query_feats_normalized = query_feats
 
     else:
+        if hasattr(train_feats, 'cpu'):
+            train_feats = train_feats.cpu().detach().numpy().astype("float32")
+        elif not isinstance(train_feats, np.ndarray):
+            train_feats = np.array(train_feats, dtype="float32")
+        if hasattr(query_feats, 'cpu'):
+            query_feats = query_feats.cpu().detach().numpy().astype("float32")
+        elif not isinstance(query_feats, np.ndarray):
+            query_feats = np.array(query_feats, dtype="float32")
+        train_feats = np.ascontiguousarray(train_feats, dtype="float32")
+        query_feats = np.ascontiguousarray(query_feats, dtype="float32")
         if args.metric != "ip":
-            train_feats_normalized = train_feats
-            query_feats_normalized = query_feats
+            train_feats_normalized = train_feats.copy()
+            query_feats_normalized = query_feats.copy()
             faiss.normalize_L2(train_feats_normalized)
             faiss.normalize_L2(query_feats_normalized)
         else:
