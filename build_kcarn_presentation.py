@@ -1,9 +1,17 @@
 """
-Builds the polished 11-slide Light-Theme Presentation for K-CARN:
-- Slides 1-3: Complete Baseline RGCL Project (Problem, Architecture, 3 Core Flaws)
-- Slides 4-7: All Enhancements Done (K-CARN State Flow, Bi-Cross-Attention, Knowledge Gate, Triplet+Hybrid+Top-20)
-- Slides 8-9: Complete 4-Stage Ablation Comparisons (FB Hateful Memes & HarMeme)
-- Slides 10-11: Engineering Pipeline / Local GPU Demo & Conclusion / Future Work
+Builds the polished 12-slide Light-Theme Presentation for K-CARN:
+- Slide 1: Title Slide (K-CARN Overview)
+- Slide 2: The Core Problem: Multimodal Confounders & Benchmark Context
+- Slide 3: [NEW WORKFLOW SLIDE in Light Red] Complete Baseline (RGCL) End-to-End State Flow & Workflow
+- Slide 4: [REVISION SLIDE in Light Red] Baseline Limitations: The 3 Core Bottlenecks
+- Slide 5: Proposed K-CARN Architecture: End-to-End State Flow
+- Slide 6: Enhancement 1: Bidirectional Multi-Head Cross-Attention (Visual Grounding)
+- Slide 7: Enhancement 2: Cognitive Knowledge Rationales & Adaptive Sigmoid Gate
+- Slide 8: Enhancement 3: Hard-Negative Triplet Metric Learning, Hybrid BCE & Top-20 Voting
+- Slide 9: Quantitative Results: Facebook Hateful Memes 4-Stage Ablation
+- Slide 10: Quantitative Results: HarMeme Benchmark Generalization
+- Slide 11: Engineering Pipeline, Reliability Fixes & Live Local GPU Inference
+- Slide 12: Conclusion, Key Research Impact & Future Directions
 """
 
 import os
@@ -25,7 +33,7 @@ ASSET_DIR = os.path.join(BASE_DIR, "ppt_assets")
 os.makedirs(ASSET_DIR, exist_ok=True)
 
 # -------------------------------------------------------------
-# THEME PALETTE (Institute-Grade Light Clean Theme)
+# THEME PALETTE
 # -------------------------------------------------------------
 NAVY = RGBColor(0x14, 0x2D, 0x50)       # Deep Navy Header
 AZURE = RGBColor(0x02, 0x84, 0xC7)      # Accent Blue
@@ -36,7 +44,15 @@ CARD_BG = RGBColor(0xFF, 0xFF, 0xFF)    # Crisp White Card
 CARD_BORDER = RGBColor(0xCB, 0xD5, 0xE1)
 TINT_BLUE = RGBColor(0xF0, 0xF9, 0xFF)
 TINT_GREEN = RGBColor(0xEC, 0xFD, 0xF5)
+
+# Light Red Theme for Baseline Revision Slides
 TINT_RED = RGBColor(0xFE, 0xF2, 0xF2)
+LIGHT_RED_BG = RGBColor(0xFF, 0xF5, 0xF5)
+LIGHT_RED_BORDER = RGBColor(0xFC, 0xA5, 0xA5)
+DARK_RED = RGBColor(0x99, 0x1B, 0x1B)
+BANNER_RED = RGBColor(0x7F, 0x1D, 0x1D)
+CRIMSON = RGBColor(0xDC, 0x26, 0x26)
+
 TEXT_DARK = RGBColor(0x1E, 0x29, 0x3B)
 TEXT_MUTED = RGBColor(0x47, 0x55, 0x69)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
@@ -54,7 +70,7 @@ def _draw_box(ax, x, y, w, h, text, fc="#FFFFFF", ec="#142D50", tc="#1E293B",
     )
     ax.add_patch(box)
     if subtext:
-        ax.text(x + w / 2, y + h * 0.64, text, ha="center", va="center",
+        ax.text(x + w / 2, y + h * 0.63, text, ha="center", va="center",
                 fontsize=fontsize, fontweight="bold" if bold else "normal",
                 color=tc, zorder=4)
         ax.text(x + w / 2, y + h * 0.30, subtext, ha="center", va="center",
@@ -80,47 +96,79 @@ def _arrow(ax, x1, y1, x2, y2, color="#334155", lw=1.8, rad=0.0):
 def build_diagrams():
     paths = {}
 
-    # 1. Baseline RGCL State Flow Diagram
-    fig, ax = plt.subplots(figsize=(10.5, 3.3), dpi=300)
-    ax.set_xlim(0, 10.5)
-    ax.set_ylim(0, 3.3)
+    # 1. Complete Baseline RGCL Workflow Diagram (Light Red Theme)
+    fig, ax = plt.subplots(figsize=(12.0, 4.3), dpi=300)
+    ax.set_xlim(0, 12.0)
+    ax.set_ylim(0, 4.3)
     ax.axis("off")
     fig.patch.set_facecolor("#FFFFFF")
 
-    _draw_box(ax, 0.2, 2.05, 1.7, 0.9, "Meme Image", fc="#EFF6FF", ec="#0284C7", subtext="Raw PNG / JPG")
-    _draw_box(ax, 0.2, 0.45, 1.7, 0.9, "Meme Caption", fc="#EFF6FF", ec="#0284C7", subtext="Raw OCR Text")
+    # Light Red Outer Container
+    outer_box = patches.FancyBboxPatch(
+        (0.12, 0.12), 11.76, 4.06,
+        boxstyle="round,pad=0.02,rounding_size=0.05",
+        facecolor="#FFF5F5", edgecolor="#FCA5A5", linewidth=1.5, zorder=1
+    )
+    ax.add_patch(outer_box)
 
-    _draw_box(ax, 2.35, 2.05, 1.85, 0.9, "CLIP Vision", fc="#F8FAFC", ec="#142D50", subtext="Frozen (1024-d)")
-    _draw_box(ax, 2.35, 0.45, 1.85, 0.9, "CLIP Text", fc="#F8FAFC", ec="#142D50", subtext="Frozen (768-d)")
+    # Step 1: Raw Inputs
+    _draw_box(ax, 0.35, 2.75, 1.85, 1.0, "Raw Meme Image", fc="#FFFFFF", ec="#EF4444", tc="#991B1B",
+              subtext="PNG / JPG Pixels", subcolor="#7F1D1D")
+    _draw_box(ax, 0.35, 0.65, 1.85, 1.0, "Raw Meme Caption", fc="#FFFFFF", ec="#EF4444", tc="#991B1B",
+              subtext="OCR Text String", subcolor="#7F1D1D")
 
-    _draw_box(ax, 4.7, 1.2, 1.75, 1.0, "Naive Concat", fc="#FEF2F2", ec="#DC2626", tc="#991B1B",
-              subtext="[v ; t] = 1792-d", subcolor="#B91C1C")
-    _draw_box(ax, 6.9, 1.2, 1.45, 1.0, "3-Layer MLP", fc="#F8FAFC", ec="#142D50", subtext="Naive Loss")
-    _draw_box(ax, 8.75, 1.2, 1.55, 1.0, "FAISS Top-5", fc="#FEF2F2", ec="#DC2626", tc="#991B1B",
-              subtext="Mean Vote Only", subcolor="#B91C1C")
+    # Step 2: Frozen Encoders
+    _draw_box(ax, 2.7, 2.75, 2.15, 1.0, "CLIP Vision Encoder", fc="#FFFFFF", ec="#DC2626", tc="#991B1B",
+              subtext="ViT-L/14@336 (Frozen)\nv in R^1024", subcolor="#7F1D1D")
+    _draw_box(ax, 2.7, 0.65, 2.15, 1.0, "CLIP Text Encoder", fc="#FFFFFF", ec="#DC2626", tc="#991B1B",
+              subtext="Transformer (Frozen)\nt in R^768", subcolor="#7F1D1D")
 
-    _arrow(ax, 1.92, 2.5, 2.33, 2.5)
-    _arrow(ax, 1.92, 0.9, 2.33, 0.9)
-    _arrow(ax, 4.22, 2.5, 4.68, 1.85)
-    _arrow(ax, 4.22, 0.9, 4.68, 1.55)
-    _arrow(ax, 6.47, 1.7, 6.88, 1.7)
-    _arrow(ax, 8.37, 1.7, 8.73, 1.7)
+    # Step 3: Blind Concatenation
+    _draw_box(ax, 5.35, 1.5, 2.15, 1.4, "Naive Concat\n[v ; t]", fc="#FEE2E2", ec="#B91C1C", tc="#7F1D1D",
+              subtext="Direct Vector Stacking\n[v ; t] in R^1792\n(No Cross-Attention)", subcolor="#991B1B", fontsize=10.0)
 
-    # Flaw badges
-    ax.text(5.57, 0.65, "Flaw 1: No Cross-Modal\nInteraction (Blind Glue)", ha="center", va="center",
-            fontsize=8.2, color="#DC2626", fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.25", fc="#FEF2F2", ec="#FCA5A5"))
-    ax.text(3.27, 0.12, "Flaw 2: No Cultural / Sarcasm Knowledge", ha="center", va="center",
-            fontsize=8.2, color="#DC2626", fontweight="bold")
-    ax.text(9.52, 0.65, "Flaw 3: Weak Loss\n& Small Top-5", ha="center", va="center",
-            fontsize=8.2, color="#DC2626", fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.25", fc="#FEF2F2", ec="#FCA5A5"))
+    # Step 4: Projection MLP & Memory Bank
+    _draw_box(ax, 7.95, 2.2, 1.85, 1.25, "3-Layer MLP\nProjection", fc="#FFFFFF", ec="#DC2626", tc="#991B1B",
+              subtext="Linear(1792->1024)\nLinear(1024->1024)\nLinear(1024->1)", subcolor="#7F1D1D", fontsize=9.0)
+    _draw_box(ax, 7.95, 0.5, 1.85, 1.25, "FAISS Memory Bank\n(L2 Index)", fc="#FFFFFF", ec="#DC2626", tc="#991B1B",
+              subtext="8,500 Cached Train\nEmbeddings", subcolor="#7F1D1D", fontsize=9.0)
 
-    p = os.path.join(ASSET_DIR, "diag_baseline_flow.png")
+    # Step 5: Outputs
+    _draw_box(ax, 10.2, 2.2, 1.55, 1.25, "Raw BCE Logits\nClassification", fc="#FEF2F2", ec="#991B1B", tc="#7F1D1D",
+              subtext="P(Hate) = sigmoid(z)\nThreshold = 0.50", subcolor="#991B1B", fontsize=8.8)
+    _draw_box(ax, 10.2, 0.5, 1.55, 1.25, "Top-5 Nearest\nMean Voting", fc="#FEF2F2", ec="#991B1B", tc="#7F1D1D",
+              subtext="Unweighted K-NN\nMajority Vote", subcolor="#991B1B", fontsize=8.8)
+
+    # Arrows (Red accented)
+    _arrow(ax, 2.2, 3.25, 2.68, 3.25, color="#DC2626")
+    _arrow(ax, 2.2, 1.15, 2.68, 1.15, color="#DC2626")
+
+    _arrow(ax, 4.85, 3.25, 5.33, 2.4, color="#DC2626")
+    _arrow(ax, 4.85, 1.15, 5.33, 2.0, color="#DC2626")
+
+    _arrow(ax, 7.5, 2.4, 7.93, 2.7, color="#DC2626")
+    _arrow(ax, 7.5, 2.0, 7.93, 1.25, color="#DC2626")
+
+    _arrow(ax, 9.8, 2.82, 10.18, 2.82, color="#991B1B")
+    _arrow(ax, 9.8, 1.12, 10.18, 1.12, color="#991B1B")
+
+    # Step Header Badges
+    stages = [
+        (1.28, "Step 1: Input Modalities"),
+        (3.78, "Step 2: Frozen Encoders"),
+        (6.42, "Step 3: Blind Fusion"),
+        (8.88, "Step 4: Projection & Memory"),
+        (10.98, "Step 5: Baseline Output")
+    ]
+    for x_pos, title in stages:
+        ax.text(x_pos, 4.02, title, ha="center", va="center", fontsize=8.5, fontweight="bold",
+                color="#991B1B", bbox=dict(boxstyle="round,pad=0.22", fc="#FEE2E2", ec="#FCA5A5", lw=1.0))
+
+    p = os.path.join(ASSET_DIR, "diag_baseline_workflow.png")
     plt.tight_layout(pad=0.1)
     plt.savefig(p, dpi=300, facecolor="#FFFFFF")
     plt.close()
-    paths["baseline_flow"] = p
+    paths["baseline_workflow"] = p
 
     # 2. Full K-CARN End-to-End State Flow Diagram
     fig, ax = plt.subplots(figsize=(11.8, 4.3), dpi=300)
@@ -129,30 +177,30 @@ def build_diagrams():
     ax.axis("off")
     fig.patch.set_facecolor("#FFFFFF")
 
-    # Stage 1: Inputs
+    # Inputs
     _draw_box(ax, 0.15, 3.2, 1.75, 0.85, "Meme Image", fc="#EFF6FF", ec="#0284C7", subtext="CLIP ViT-L/14 (1024d)")
     _draw_box(ax, 0.15, 1.85, 1.75, 0.85, "Meme Caption", fc="#EFF6FF", ec="#0284C7", subtext="CLIP Text (768d)")
     _draw_box(ax, 0.15, 0.4, 1.75, 0.95, "Knowledge Stream", fc="#ECFDF5", ec="#0D9488", tc="#065F46",
               subtext="Cognitive Rationale\nCLIP Text (768d)", subcolor="#0F766E")
 
-    # Stage 2: Projection + Bi-Cross-Attention
+    # Projection + Bi-Cross-Attention
     _draw_box(ax, 2.35, 2.5, 1.45, 1.55, "Modality\nProjection", fc="#F8FAFC", ec="#142D50",
               subtext="Linear -> 1024d\n+ L2 Norm")
     _draw_box(ax, 4.25, 2.25, 2.35, 1.8, "Enhancement 1:\nBidirectional\nCross-Attention",
               fc="#E0F2FE", ec="#0284C7", tc="#0C4A6E",
               subtext="8 Heads (T->V & V->T)\nResidual + LayerNorm + FFN", subcolor="#0369A1")
 
-    # Stage 3: Adaptive Knowledge Gate
+    # Adaptive Knowledge Gate
     _draw_box(ax, 4.25, 0.4, 2.35, 1.15, "Enhancement 2:\nAdaptive Knowledge Gate",
               fc="#ECFDF5", ec="#0D9488", tc="#065F46",
               subtext="G = sigmoid(W_g[H ; K])\nH_final = H + G * K_att", subcolor="#0F766E")
 
-    # Stage 4: Joint Representation + Triplet/Hybrid Loss
+    # Joint Representation + Triplet/Hybrid Loss
     _draw_box(ax, 7.1, 1.65, 2.05, 1.55, "Enhancement 3:\nTriplet + Hard-Neg\n+ Hybrid BCE",
               fc="#FEF3C7", ec="#D97706", tc="#78350F",
               subtext="3-Layer MLP (1024d)\nMargin eps=0.1 + CE Head", subcolor="#92400E")
 
-    # Stage 5: Retrieval & Output
+    # Retrieval & Output
     _draw_box(ax, 9.6, 2.45, 2.2, 1.2, "FAISS Top-20\nArithmetic Voting",
               fc="#142D50", ec="#142D50", tc="#FFFFFF",
               subtext="Similarity-Weighted\nCase Retrieval", subcolor="#CBD5E1")
@@ -172,7 +220,6 @@ def build_diagrams():
     _arrow(ax, 9.17, 2.1, 9.58, 1.45, color="#16A34A", lw=2.0)
     _arrow(ax, 10.7, 2.43, 10.7, 1.93, color="#142D50", lw=1.8)
 
-    # Top labels
     for x_pos, lbl in [(1.0, "1. Tri-Modal Inputs"), (5.4, "2. Deep Interactive Fusion"),
                        (8.1, "3. Metric + CE Training"), (10.7, "4. Retrieval Decision")]:
         ax.text(x_pos, 4.25, lbl, ha="center", va="center", fontsize=9.0, fontweight="bold", color="#142D50")
@@ -204,10 +251,8 @@ def build_diagrams():
 
     _arrow(ax, 1.4, 3.48, 1.4, 2.93, color="#0284C7", lw=2.0)
     _arrow(ax, 5.0, 3.48, 5.0, 2.93, color="#0D9488", lw=2.0)
-    # Cross arrows
     _arrow(ax, 4.3, 3.48, 2.2, 2.93, color="#0D9488", lw=1.7)
     _arrow(ax, 2.1, 3.48, 4.2, 2.93, color="#0284C7", lw=1.7)
-
     _arrow(ax, 1.5, 1.78, 2.3, 1.23, color="#142D50", lw=1.8)
     _arrow(ax, 4.9, 1.78, 4.1, 1.23, color="#142D50", lw=1.8)
 
@@ -257,19 +302,16 @@ def build_diagrams():
     ax.axis("off")
     fig.patch.set_facecolor("#FFFFFF")
 
-    # Outer frame
     frame = patches.FancyBboxPatch((0.15, 0.15), 5.9, 4.0, boxstyle="round,pad=0.05,rounding_size=0.1",
                                    fc="#F8FAFC", ec="#CBD5E1", lw=1.5)
     ax.add_patch(frame)
     ax.text(3.1, 3.92, "Embedding Space Optimization (Triplet + Hard Negatives)",
             ha="center", va="center", fontsize=9.5, fontweight="bold", color="#142D50")
 
-    # Margin circle
     circle = patches.Circle((2.4, 2.1), 1.25, fill=False, ls="--", ec="#0284C7", lw=1.5)
     ax.add_patch(circle)
     ax.text(2.4, 0.72, "Margin Boundary (eps = 0.1)", ha="center", fontsize=8.3, color="#0284C7", fontweight="bold")
 
-    # Points
     ax.scatter([2.4], [2.1], s=320, color="#142D50", zorder=5)
     ax.text(2.4, 1.65, "Anchor Meme\n(Hateful)", ha="center", fontsize=8.3, fontweight="bold", color="#142D50")
 
@@ -282,7 +324,6 @@ def build_diagrams():
     ax.scatter([5.15], [2.55], s=260, color="#DC2626", zorder=5)
     ax.text(5.15, 2.02, "Pushed Outside\nMargin!", ha="center", fontsize=8.0, fontweight="bold", color="#991B1B")
 
-    # Pull & Push arrows
     _arrow(ax, 1.6, 2.72, 2.22, 2.25, color="#0D9488", lw=2.2)
     ax.text(1.75, 2.35, "PULL", fontsize=8.0, fontweight="bold", color="#0D9488")
 
@@ -385,7 +426,7 @@ def build_diagrams():
 
 
 # -------------------------------------------------------------
-# PART 2: POWERPOINT HELPERS (CLEAN Z-ORDER & ZERO OVERLAP)
+# PART 2: POWERPOINT HELPERS
 # -------------------------------------------------------------
 def send_to_back(slide, shape):
     spTree = slide.shapes._spTree
@@ -408,23 +449,23 @@ def set_slide_bg(slide, color=BG_LIGHT):
     fill.fore_color.rgb = color
 
 
-def add_header_and_footer(slide, title_text, slide_num, total_slides=11):
+def add_header_and_footer(slide, title_text, slide_num, total_slides=12, banner_color=NAVY, stripe_color=AZURE):
     set_slide_bg(slide, BG_LIGHT)
 
-    # Top Navy Banner (0 -> 1.05 in)
+    # Top Banner
     banner = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(1.02))
     banner.fill.solid()
-    banner.fill.fore_color.rgb = NAVY
+    banner.fill.fore_color.rgb = banner_color
     banner.line.fill.background()
     send_to_back(slide, banner)
 
-    # Azure Accent Stripe
+    # Accent Stripe
     stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(1.02), Inches(13.333), Inches(0.06))
     stripe.fill.solid()
-    stripe.fill.fore_color.rgb = AZURE
+    stripe.fill.fore_color.rgb = stripe_color
     stripe.line.fill.background()
 
-    # Standard Title Placeholder (brought cleanly to front!)
+    # Standard Title Placeholder
     title = slide.shapes.title
     title.left = Inches(0.55)
     title.top = Inches(0.16)
@@ -441,7 +482,7 @@ def add_header_and_footer(slide, title_text, slide_num, total_slides=11):
     p.font.color.rgb = WHITE
     bring_to_front(slide, title)
 
-    # Clean Footer Bar
+    # Footer Bar
     footer_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(7.08), Inches(12.333), Inches(0.015))
     footer_line.fill.solid()
     footer_line.fill.fore_color.rgb = CARD_BORDER
@@ -461,12 +502,12 @@ def add_header_and_footer(slide, title_text, slide_num, total_slides=11):
     fr.font.name = "Calibri"
     fr.font.size = Pt(10.5)
     fr.font.bold = True
-    fr.font.color.rgb = NAVY
+    fr.font.color.rgb = banner_color
 
 
 def add_card(slide, left, top, width, height, title=None, bullets=None,
              fill_color=CARD_BG, border_color=CARD_BORDER, title_color=NAVY,
-             accent_bar_color=None, font_size=13.5, space_after=6):
+             accent_bar_color=None, font_size=13.5, space_after=6, title_size=15.5):
     card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height))
     card.adjustments[0] = 0.03
     card.fill.solid()
@@ -491,10 +532,10 @@ def add_card(slide, left, top, width, height, title=None, bullets=None,
         p = tf.paragraphs[0]
         p.text = title
         p.font.name = "Calibri"
-        p.font.size = Pt(15.5)
+        p.font.size = Pt(title_size)
         p.font.bold = True
         p.font.color.rgb = title_color
-        p.space_after = Pt(6)
+        p.space_after = Pt(space_after)
         first = False
 
     if bullets:
@@ -510,7 +551,7 @@ def add_card(slide, left, top, width, height, title=None, bullets=None,
                 r1.font.name = "Calibri"
                 r1.font.size = Pt(font_size)
                 r1.font.bold = True
-                r1.font.color.rgb = NAVY
+                r1.font.color.rgb = title_color
                 r2 = p.add_run()
                 r2.text = rest
                 r2.font.name = "Calibri"
@@ -524,7 +565,7 @@ def add_card(slide, left, top, width, height, title=None, bullets=None,
     return card
 
 
-def add_fitted_image(slide, img_path, left, top, max_w, max_h, add_border=True):
+def add_fitted_image(slide, img_path, left, top, max_w, max_h, add_border=True, border_color=CARD_BORDER):
     im = Image.open(img_path)
     iw, ih = im.size
     ratio = iw / ih
@@ -541,14 +582,14 @@ def add_fitted_image(slide, img_path, left, top, max_w, max_h, add_border=True):
         frame.adjustments[0] = 0.02
         frame.fill.solid()
         frame.fill.fore_color.rgb = WHITE
-        frame.line.color.rgb = CARD_BORDER
+        frame.line.color.rgb = border_color
         frame.line.width = Pt(1.0)
 
     slide.shapes.add_picture(img_path, Inches(x), Inches(y), width=Inches(w), height=Inches(h))
 
 
 # -------------------------------------------------------------
-# PART 3: BUILD THE 11-SLIDE DECK
+# PART 3: BUILD THE 12-SLIDE DECK (< 13 SLIDES)
 # -------------------------------------------------------------
 def build_presentation():
     imgs = build_diagrams()
@@ -556,16 +597,14 @@ def build_presentation():
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
 
-    # Layout 0 = Title Slide, Layout 5 = Title Only (has official Title placeholder!)
     title_layout = prs.slide_layouts[0]
     content_layout = prs.slide_layouts[5]
-    TOTAL = 11
+    TOTAL = 12
 
     # ==================== SLIDE 1: TITLE SLIDE ====================
     s1 = prs.slides.add_slide(title_layout)
     set_slide_bg(s1, BG_LIGHT)
 
-    # Clean card behind title & subtitle
     card = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.85), Inches(1.1), Inches(11.63), Inches(5.3))
     card.adjustments[0] = 0.03
     card.fill.solid()
@@ -574,13 +613,11 @@ def build_presentation():
     card.line.width = Pt(1.5)
     send_to_back(s1, card)
 
-    # Left Navy Accent Bar on Card
     lbar = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.85), Inches(1.1), Inches(0.25), Inches(5.3))
     lbar.fill.solid()
     lbar.fill.fore_color.rgb = NAVY
     lbar.line.fill.background()
 
-    # Category Pill
     pill = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.55), Inches(1.55), Inches(4.6), Inches(0.45))
     pill.adjustments[0] = 0.5
     pill.fill.solid()
@@ -594,7 +631,6 @@ def build_presentation():
     pp.font.bold = True
     pp.font.color.rgb = AZURE
 
-    # Official Title Placeholder
     t = s1.shapes.title
     t.left = Inches(1.55)
     t.top = Inches(2.2)
@@ -608,7 +644,6 @@ def build_presentation():
     tp.font.color.rgb = NAVY
     bring_to_front(s1, t)
 
-    # Subtitle Placeholder
     sub = s1.placeholders[1]
     sub.left = Inches(1.55)
     sub.top = Inches(3.85)
@@ -621,7 +656,6 @@ def build_presentation():
     sp.font.color.rgb = TEXT_MUTED
     bring_to_front(s1, sub)
 
-    # Bottom Metric Strip on Slide 1
     meta = s1.shapes.add_textbox(Inches(1.55), Inches(5.35), Inches(10.3), Inches(0.65))
     mp = meta.text_frame.paragraphs[0]
     mp.text = "Benchmarks: Facebook Hateful Memes (10,000 memes) & HarMeme (7,096 memes)   |   Best Gain: +6.61% AUROC (80.53%) & +11.81% F1"
@@ -630,17 +664,17 @@ def build_presentation():
     mp.font.bold = True
     mp.font.color.rgb = TEAL
 
-    # ==================== SLIDE 2: BASELINE CONTEXT & PROBLEM ====================
+    # ==================== SLIDE 2: THE PROBLEM (WHY MEMES FOOL AI) ====================
     s2 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s2, "1. The Problem: Why Hateful Memes Fool AI (Baseline Context)", 2, TOTAL)
+    add_header_and_footer(s2, "1. The Core Problem: Why Hateful Memes Fool Standard AI", 2, TOTAL)
 
     add_card(
         s2, 0.55, 1.32, 6.0, 2.75,
         title="The 'Hidden Meaning Trap' (Multimodal Confounders)",
         bullets=[
-            ("Why simple word filters fail:", "Memes rarely use obvious slurs. Both the picture alone and text alone often look 100% innocent."),
-            ("Real-world example:", "Photo of a desert or trash pile (Benign) + Caption 'Look at where they belong' (Benign) -> Combined to target a minority = Hate Speech."),
-            ("Core Challenge:", "Toxicity exists ONLY in the hidden relationship between visual cues, caption words, and cultural context.")
+            ("Why simple word filters fail:", "Memes rarely use obvious slurs. Both the picture alone and text alone look 100% innocent in isolation."),
+            ("Real-world example:", "Photo of a desert / garbage dump (Benign) + Caption 'Look at where they belong' (Benign) -> Combined targeting an ethnic minority = Hate Speech."),
+            ("Core Challenge:", "Hate speech exists ONLY in the implicit interaction between visual signals, caption words, and cultural context.")
         ],
         accent_bar_color=AZURE, font_size=13.5
     )
@@ -650,8 +684,8 @@ def build_presentation():
         title="Our Starting Point: The Baseline RGCL Project",
         bullets=[
             ("Base Framework:", "RGCL (Retrieval-Guided Contrastive Learning) built on frozen CLIP ViT-L/14-336 vision and text encoders."),
-            ("Core Idea:", "Instead of memorizing every hate pattern in weights, retrieve the most similar known memes from a FAISS memory bank and vote."),
-            ("Why Retrieval Helps:", "Handles fast-changing internet slang and allows updating meme examples without retraining the vision backbone.")
+            ("Core Philosophy:", "Instead of memorizing hate rules in weights, retrieve the most similar known memes from a FAISS memory bank and vote."),
+            ("Why Retrieval Matters:", "Handles fast-evolving internet slang and allows instant knowledge updates without retraining foundation models.")
         ],
         accent_bar_color=NAVY, font_size=13.5
     )
@@ -660,9 +694,9 @@ def build_presentation():
         s2, 0.55, 4.30, 6.0, 2.55,
         title="Benchmark 1: Facebook Hateful Memes (FB)",
         bullets=[
-            ("Size:", "10,000 memes (8,500 Train | 500 Dev Seen | 1,000 Test Seen | 1,000 Test Unseen)."),
-            ("Design:", "Specifically built with 'confounder' pairs—changing either the image or text flips the label from Hateful to Benign."),
-            ("Primary Eval Split:", "dev_seen (500 balanced labeled memes; official test_seen omits labels).")
+            ("Dataset Size:", "10,000 memes (8,500 Train | 500 Dev Seen | 1,000 Test Seen | 1,000 Test Unseen)."),
+            ("Adversarial Design:", "Built with 'confounder' pairs—modifying either image or text flips the label between Hateful and Benign."),
+            ("Evaluation Split:", "dev_seen (500 balanced labeled memes; official test_seen omits ground-truth labels).")
         ],
         fill_color=TINT_BLUE, border_color=AZURE, font_size=13
     )
@@ -671,57 +705,112 @@ def build_presentation():
         s2, 6.78, 4.30, 6.0, 2.55,
         title="Benchmark 2: HarMeme (COVID-19 & US Politics)",
         bullets=[
-            ("Size:", "7,096 real-world memes (2,938 Train | 177 Dev | 355 Test labeled splits)."),
-            ("Design:", "Captures real internet sarcasm, political mockery, and harmful stereotypes targeting individuals and communities."),
-            ("Why Use Both:", "Proves our enhancements generalize beyond synthetic FB pairs to noisy real-world social media memes.")
+            ("Dataset Size:", "7,096 real-world memes (2,938 Train | 177 Dev | 355 Test labeled splits)."),
+            ("Real Internet Mockery:", "Captures messy internet sarcasm, political hostility, and harmful stereotypes targeting public figures & groups."),
+            ("Evaluation Value:", "Proves our enhancements generalize to uncontrolled social media environments beyond curated benchmarks.")
         ],
         fill_color=TINT_GREEN, border_color=TEAL, font_size=13
     )
 
-    # ==================== SLIDE 3: BASELINE ARCHITECTURE & FLAWS ====================
+    # ==================== SLIDE 3: [NEW] BASELINE COMPLETE WORKFLOW (LIGHT RED) ====================
     s3 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s3, "2. Baseline Project (RGCL): State Flow & 3 Core Limitations", 3, TOTAL)
+    add_header_and_footer(s3, "2. Baseline Model (RGCL): Complete End-to-End Workflow & Execution Flow", 3, TOTAL,
+                          banner_color=BANNER_RED, stripe_color=CRIMSON)
 
-    add_fitted_image(s3, imgs["baseline_flow"], 0.55, 1.28, 12.23, 3.15, add_border=True)
+    add_fitted_image(s3, imgs["baseline_workflow"], 0.55, 1.25, 12.23, 3.45, add_border=True, border_color=LIGHT_RED_BORDER)
 
+    # 4 Quick Revision Cards at the bottom in Light Red theme
+    c_w = 2.92
+    c_gap = 0.18
     add_card(
-        s3, 0.55, 4.62, 3.9, 2.25,
-        title="Flaw 1: Blind Gluing (Concat)",
+        s3, 0.55, 4.88, c_w, 2.05,
+        title="Step 1: Dual Inputs",
         bullets=[
-            ("What happens:", "Baseline glues [Image 1024d ; Text 768d] into a 1792d vector."),
-            ("Technical limit:", "Linear layers W_v*v + W_t*t only ADD features—image and text never interact to catch sarcasm.")
+            ("Vision:", "Frozen CLIP ViT-L/14@336 extracts 1024-d image embedding v."),
+            ("Text:", "Frozen CLIP text transformer extracts 768-d caption embedding t.")
         ],
-        fill_color=TINT_RED, border_color=RED, title_color=RED, font_size=12.5
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=11.5, title_size=13.5
     )
 
     add_card(
-        s3, 4.71, 4.62, 3.9, 2.25,
-        title="Flaw 2: No Cultural Context",
+        s3, 0.55 + (c_w + c_gap), 4.88, c_w, 2.05,
+        title="Step 2: Naive Concat",
         bullets=[
-            ("What happens:", "Frozen CLIP vectors only encode literal objects and surface words."),
-            ("Technical limit:", "Blind to coded dogwhistles, historical tropes, and mocking captions like 'bravery at its finest'.")
+            ("Direct Stacking:", "Vectors glued as [v ; t] in R^1792."),
+            ("Core Limitation:", "Zero cross-attention; image pixels never interact with caption words.")
         ],
-        fill_color=TINT_RED, border_color=RED, title_color=RED, font_size=12.5
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=11.5, title_size=13.5
     )
 
     add_card(
-        s3, 8.88, 4.62, 3.9, 2.25,
-        title="Flaw 3: Weak Objective & Voting",
+        s3, 0.55 + 2 * (c_w + c_gap), 4.88, c_w, 2.05,
+        title="Step 3: Linear Projection",
         bullets=[
-            ("What happens:", "Default naive loss, no hard-negative mining, no Hybrid BCE head, narrow Top-5 voting."),
-            ("Result:", "Overfits after Epoch 2; FB AUROC stalls at 0.739 and F1 at 0.562.")
+            ("3-Layer MLP:", "Maps 1792-d -> 1024-d projection space with dropout."),
+            ("Supervision:", "Trained with naive cosine similarity / basic BCE loss.")
         ],
-        fill_color=TINT_RED, border_color=RED, title_color=RED, font_size=12.5
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=11.5, title_size=13.5
     )
 
-    # ==================== SLIDE 4: PROPOSED K-CARN ARCHITECTURE ====================
+    add_card(
+        s3, 0.55 + 3 * (c_w + c_gap), 4.88, c_w, 2.05,
+        title="Step 4: Top-5 Retrieval",
+        bullets=[
+            ("FAISS Index:", "Queries memory bank of 8,500 training meme embeddings."),
+            ("Voting:", "Simple unweighted mean vote across Top-5 nearest neighbors.")
+        ],
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=11.5, title_size=13.5
+    )
+
+    # ==================== SLIDE 4: BASELINE LIMITATIONS & BOTTLENECKS (LIGHT RED) ====================
     s4 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s4, "3. Our Enhanced System: K-CARN End-to-End State Flow", 4, TOTAL)
-
-    add_fitted_image(s4, imgs["kcarn_flow"], 0.55, 1.26, 12.23, 4.05, add_border=True)
+    add_header_and_footer(s4, "3. Baseline Limitations: The 3 Core Technical Bottlenecks (Why It Failed)", 4, TOTAL,
+                          banner_color=BANNER_RED, stripe_color=CRIMSON)
 
     add_card(
-        s4, 0.55, 5.48, 12.23, 1.42,
+        s4, 0.55, 1.35, 3.9, 5.5,
+        title="Flaw 1: Blind Feature Gluing (Linear Addition Trap)",
+        bullets=[
+            ("The Mechanism:", "Baseline simply concatenates [v in R^1024 ; t in R^768] into a single 1792-d vector."),
+            ("Mathematical Failure:", "When fed into the first linear layer, W[v ; t] = W_v v + W_t t. The vision features and text features are merely ADDED independently!"),
+            ("Why It Fails on Memes:", "Sarcasm and irony depend entirely on cross-multiplicative interaction (e.g. caption 'bravery' contrasting with cowardice in the image). Linear addition cannot compute cross-modal correlation."),
+            ("Consequence:", "Model misclassifies benign confounders that share common words or common image objects.")
+        ],
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=12.2, space_after=8
+    )
+
+    add_card(
+        s4, 4.71, 1.35, 3.9, 5.5,
+        title="Flaw 2: Zero Cultural Context & Historical Dogwhistles",
+        bullets=[
+            ("The Mechanism:", "Relies 100% on literal zero-shot embeddings from frozen CLIP."),
+            ("Semantic Blindspot:", "CLIP's pre-training recognizes literal entities ('desert', 'well-dressed man', 'swimming pool') but possesses no reasoning regarding historical tropes, racial stereotypes, or disguised slurs."),
+            ("Real Example Missed:", "Meme displaying a photo of people walking with caption 'it is time to send these parasites back'. CLIP sees innocent people and terrain; it cannot deduce the dehumanizing immigrant trope without background knowledge."),
+            ("Consequence:", "High false-negative rate on subtle, coded hate speech.")
+        ],
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=12.2, space_after=8
+    )
+
+    add_card(
+        s4, 8.88, 1.35, 3.9, 5.5,
+        title="Flaw 3: Brittle Loss Function & Narrow Top-5 Voting",
+        bullets=[
+            ("The Mechanism:", "Trained with naive cosine similarity without hard-negative mining; static Top-5 unweighted mean voting during inference."),
+            ("Optimization Collapse:", "Because training samples are dominated by easy pairs, the model quickly overfits by Epoch 2 and stops learning fine-grained boundaries."),
+            ("Retrieval Fragility:", "Taking an unweighted mean of only 5 neighbors is heavily polluted if even 1 or 2 retrieved cases belong to a confusing confounder."),
+            ("Consequence:", "FB dev AUROC stalled at 73.92% and F1 at 56.17%, with test recall collapsing on subtle political memes.")
+        ],
+        fill_color=TINT_RED, border_color=LIGHT_RED_BORDER, title_color=DARK_RED, font_size=12.2, space_after=8
+    )
+
+    # ==================== SLIDE 5: PROPOSED K-CARN ARCHITECTURE ====================
+    s5 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s5, "4. Our Enhanced System: K-CARN End-to-End State Flow", 5, TOTAL)
+
+    add_fitted_image(s5, imgs["kcarn_flow"], 0.55, 1.26, 12.23, 4.05, add_border=True)
+
+    add_card(
+        s5, 0.55, 5.48, 12.23, 1.42,
         title="Three Modular Upgrades Built on Top of RGCL (100% Backward-Compatible)",
         bullets=[
             ("1. Bidirectional Cross-Attention:", "Replaces naive concatenation with 8-head Text<->Image attention so words ground directly onto visual cues."),
@@ -731,14 +820,14 @@ def build_presentation():
         fill_color=TINT_BLUE, border_color=AZURE, font_size=12.5, space_after=3
     )
 
-    # ==================== SLIDE 5: ENHANCEMENT 1 - CROSS ATTENTION ====================
-    s5 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s5, "4. Enhancement 1: Bidirectional Multi-Head Cross-Attention", 5, TOTAL)
+    # ==================== SLIDE 6: ENHANCEMENT 1 - CROSS ATTENTION ====================
+    s6 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s6, "5. Enhancement 1: Bidirectional Multi-Head Cross-Attention", 6, TOTAL)
 
-    add_fitted_image(s5, imgs["cross_attn"], 0.55, 1.32, 6.2, 5.5, add_border=True)
+    add_fitted_image(s6, imgs["cross_attn"], 0.55, 1.32, 6.2, 5.5, add_border=True)
 
     add_card(
-        s5, 6.95, 1.32, 5.83, 2.65,
+        s6, 6.95, 1.32, 5.83, 2.65,
         title="Simple Intuition: Two Teams of 8 Detectives",
         bullets=[
             ("Old Way (Concat):", "Taping a photo and a note together without either side reading the other."),
@@ -749,7 +838,7 @@ def build_presentation():
     )
 
     add_card(
-        s5, 6.95, 4.15, 5.83, 2.67,
+        s6, 6.95, 4.15, 5.83, 2.67,
         title="Technical Implementation (cross_attention_fusion.py)",
         bullets=[
             ("Scaled Dot-Product:", "Attention(Q,K,V) = Softmax(Q * K^T / sqrt(d_k)) * V across 8 parallel heads (d_k = 128)."),
@@ -759,14 +848,14 @@ def build_presentation():
         fill_color=TINT_BLUE, border_color=AZURE, font_size=13
     )
 
-    # ==================== SLIDE 6: ENHANCEMENT 2 - KNOWLEDGE GATE ====================
-    s6 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s6, "5. Enhancement 2: Cognitive Knowledge Rationales & Adaptive Gate", 6, TOTAL)
+    # ==================== SLIDE 7: ENHANCEMENT 2 - KNOWLEDGE GATE ====================
+    s7 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s7, "6. Enhancement 2: Cognitive Knowledge Rationales & Adaptive Gate", 7, TOTAL)
 
-    add_fitted_image(s6, imgs["knowledge_gate"], 0.55, 1.32, 6.2, 5.5, add_border=True)
+    add_fitted_image(s7, imgs["knowledge_gate"], 0.55, 1.32, 6.2, 5.5, add_border=True)
 
     add_card(
-        s6, 6.95, 1.32, 5.83, 2.65,
+        s7, 6.95, 1.32, 5.83, 2.65,
         title="Why Add a 3rd Knowledge Stream?",
         bullets=[
             ("The Gap:", "CLIP sees objects and words, but misses coded slurs, historical tropes, and mocking sarcasm."),
@@ -777,7 +866,7 @@ def build_presentation():
     )
 
     add_card(
-        s6, 6.95, 4.15, 5.83, 2.67,
+        s7, 6.95, 4.15, 5.83, 2.67,
         title="Why an Adaptive Sigmoid Gate? (Hallucination Guard)",
         bullets=[
             ("Formula:", "G = sigmoid(W_g[H ; K_att] + b_g),   H_final = LayerNorm(H + G * K_att)."),
@@ -787,14 +876,14 @@ def build_presentation():
         fill_color=TINT_GREEN, border_color=TEAL, font_size=13
     )
 
-    # ==================== SLIDE 7: ENHANCEMENT 3 - TRIPLET + HYBRID ====================
-    s7 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s7, "6. Enhancement 3: Hard-Negative Triplet Loss, Hybrid CE & Top-20", 7, TOTAL)
+    # ==================== SLIDE 8: ENHANCEMENT 3 - TRIPLET + HYBRID ====================
+    s8 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s8, "7. Enhancement 3: Hard-Negative Triplet Loss, Hybrid CE & Top-20", 8, TOTAL)
 
-    add_fitted_image(s7, imgs["triplet_space"], 0.55, 1.32, 6.1, 5.5, add_border=True)
+    add_fitted_image(s8, imgs["triplet_space"], 0.55, 1.32, 6.1, 5.5, add_border=True)
 
     add_card(
-        s7, 6.85, 1.32, 5.93, 2.7,
+        s8, 6.85, 1.32, 5.93, 2.7,
         title="Learning From the Trickiest Look-Alikes",
         bullets=[
             ("Hard Negative Mining:", "Instead of easy random comparisons, FAISS finds the closest opposite-class meme (a benign look-alike) and forces a margin eps = 0.1."),
@@ -805,7 +894,7 @@ def build_presentation():
     )
 
     add_card(
-        s7, 6.85, 4.2, 5.93, 2.62,
+        s8, 6.85, 4.2, 5.93, 2.62,
         title="Hybrid Supervision + Top-20 Arithmetic Voting",
         bullets=[
             ("Hybrid Loss:", "L_total = L_Triplet_HardNeg + lambda * L_BCE jointly trains the retrieval space AND calibrates the classifier head."),
@@ -815,14 +904,14 @@ def build_presentation():
         fill_color=TINT_BLUE, border_color=AZURE, font_size=13
     )
 
-    # ==================== SLIDE 8: FB RESULTS & ABLATION ====================
-    s8 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s8, "7. Results: Facebook Hateful Memes (4-Stage Ablation)", 8, TOTAL)
+    # ==================== SLIDE 9: FB RESULTS & ABLATION ====================
+    s9 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s9, "8. Results: Facebook Hateful Memes (4-Stage Ablation)", 9, TOTAL)
 
-    add_fitted_image(s8, imgs["chart_fb"], 0.55, 1.32, 7.7, 5.5, add_border=True)
+    add_fitted_image(s9, imgs["chart_fb"], 0.55, 1.32, 7.7, 5.5, add_border=True)
 
     add_card(
-        s8, 8.45, 1.32, 4.33, 2.65,
+        s9, 8.45, 1.32, 4.33, 2.65,
         title="Net Gains Over Baseline (dev_seen)",
         bullets=[
             ("Val AUROC:", "73.92% -> 80.53%  (+6.61%)"),
@@ -834,7 +923,7 @@ def build_presentation():
     )
 
     add_card(
-        s8, 8.45, 4.15, 4.33, 2.67,
+        s9, 8.45, 4.15, 4.33, 2.67,
         title="What the Ablation Proves",
         bullets=[
             ("Cross-Attention:", "Immediately boosted F1 by +5.47% over blind concat."),
@@ -844,14 +933,14 @@ def build_presentation():
         accent_bar_color=NAVY, font_size=13
     )
 
-    # ==================== SLIDE 9: HARMEME RESULTS & ABLATION ====================
-    s9 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s9, "8. Results: HarMeme Benchmark (Cross-Dataset Generalization)", 9, TOTAL)
+    # ==================== SLIDE 10: HARMEME RESULTS & ABLATION ====================
+    s10 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s10, "9. Results: HarMeme Benchmark (Cross-Dataset Generalization)", 10, TOTAL)
 
-    add_fitted_image(s9, imgs["chart_harmeme"], 0.55, 1.32, 7.7, 5.5, add_border=True)
+    add_fitted_image(s10, imgs["chart_harmeme"], 0.55, 1.32, 7.7, 5.5, add_border=True)
 
     add_card(
-        s9, 8.45, 1.32, 4.33, 2.75,
+        s10, 8.45, 1.32, 4.33, 2.75,
         title="Net Gains Over Baseline (dev & test)",
         bullets=[
             ("Test AUROC:", "65.74% -> 70.72%  (+4.98%)"),
@@ -864,7 +953,7 @@ def build_presentation():
     )
 
     add_card(
-        s9, 8.45, 4.25, 4.33, 2.57,
+        s10, 8.45, 4.25, 4.33, 2.57,
         title="Key Generalization Insights",
         bullets=[
             ("Monotonic Val Gain:", "Every stage climbed steadily (57.6% -> 58.8% -> 60.5%)."),
@@ -874,12 +963,12 @@ def build_presentation():
         accent_bar_color=AZURE, font_size=12.8
     )
 
-    # ==================== SLIDE 10: ENGINEERING & LOCAL INFERENCE ====================
-    s10 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s10, "9. Engineering Pipeline, Reliability Fixes & Local GPU Demo", 10, TOTAL)
+    # ==================== SLIDE 11: ENGINEERING & LOCAL INFERENCE ====================
+    s11 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s11, "10. Engineering Pipeline, Reliability Fixes & Local GPU Demo", 11, TOTAL)
 
     add_card(
-        s10, 0.55, 1.32, 6.0, 2.7,
+        s11, 0.55, 1.32, 6.0, 2.7,
         title="Permanent Pipeline Fixes Engineered in src/",
         bullets=[
             ("Auto-Path Resolution:", "dataset.py automatically maps HuggingFace '/' model names to '_HF.pt' checkpoints (no manual symlinks)."),
@@ -890,18 +979,18 @@ def build_presentation():
     )
 
     add_card(
-        s10, 6.78, 1.32, 6.0, 2.7,
+        s11, 6.78, 1.32, 6.0, 2.7,
         title="Modular Design & Reproducibility",
         bullets=[
             ("Zero Breaking Changes:", "--fusion_mode concat runs exact baseline; --fusion_mode k_carn --use_knowledge True runs full K-CARN."),
             ("Saved Embeddings:", "Pre-extracted CLIP + Knowledge embeddings allow 20-epoch Kaggle GPU runs in ~2-9 minutes."),
-            ("Version Control:", "Published cleanly to GitHub (ESHANT05/rm_project) with both 'main' and 'baseline-checkpoint' branches.")
+            ("Interactive Web Dashboard:", "Built full-featured Streamlit GUI (app.py) with real-time Auto-OCR and live model predictions.")
         ],
         accent_bar_color=AZURE, font_size=13
     )
 
     add_card(
-        s10, 0.55, 4.22, 12.23, 2.6,
+        s11, 0.55, 4.22, 12.23, 2.6,
         title="Live Local GPU Inference Pipeline (predict.py on Local NVIDIA CUDA)",
         bullets=[
             ("Single-Command Prediction:", "conda run -n RGCL python predict.py --image 'data/image/FB/All/08291.png' --text 'white people is this a shooting range'"),
@@ -912,12 +1001,12 @@ def build_presentation():
         fill_color=TINT_BLUE, border_color=AZURE, font_size=13, space_after=5
     )
 
-    # ==================== SLIDE 11: CONCLUSION & FUTURE WORK ====================
-    s11 = prs.slides.add_slide(content_layout)
-    add_header_and_footer(s11, "10. Conclusion, Key Contributions & Future Directions", 11, TOTAL)
+    # ==================== SLIDE 12: CONCLUSION & FUTURE WORK ====================
+    s12 = prs.slides.add_slide(content_layout)
+    add_header_and_footer(s12, "11. Conclusion, Key Contributions & Future Directions", 12, TOTAL)
 
     add_card(
-        s11, 0.55, 1.32, 6.0, 2.6,
+        s12, 0.55, 1.32, 6.0, 2.6,
         title="1. Research Impact",
         bullets=[
             ("Solved Blind Fusion:", "Replaced naive concatenation with Bidirectional Multi-Head Cross-Attention so visual and text signals actively ground each other."),
@@ -927,7 +1016,7 @@ def build_presentation():
     )
 
     add_card(
-        s11, 6.78, 1.32, 6.0, 2.6,
+        s12, 6.78, 1.32, 6.0, 2.6,
         title="2. Proven Quantitative Gains",
         bullets=[
             ("Facebook Hateful Memes:", "AUROC 73.92% -> 80.53% (+6.61%), Accuracy +4.80%, Precision +10.46%, F1 +11.81%."),
@@ -937,17 +1026,17 @@ def build_presentation():
     )
 
     add_card(
-        s11, 0.55, 4.12, 6.0, 2.7,
+        s12, 0.55, 4.12, 6.0, 2.7,
         title="3. Complete Research Deliverables",
         bullets=[
-            ("Enhanced Codebase:", "Modular K-CARN PyTorch modules + local GPU inference script (predict.py)."),
-            ("Documentation:", "3-page technical & conceptual report (K_CARN_Project_Report.pdf) + GitHub repository (ESHANT05/rm_project).")
+            ("Enhanced Codebase:", "Modular K-CARN PyTorch modules + local GPU inference script (predict.py) + Streamlit GUI (app.py)."),
+            ("Documentation:", "3-page technical report (K_CARN_Project_Report.pdf) + GitHub repo (ESHANT05/rm_project).")
         ],
         accent_bar_color=AZURE, font_size=13.5
     )
 
     add_card(
-        s11, 6.78, 4.12, 6.0, 2.7,
+        s12, 6.78, 4.12, 6.0, 2.7,
         title="4. Future Directions",
         bullets=[
             ("End-to-End LoRA Fine-Tuning:", "Unfreeze top CLIP vision/text layers with low-rank adapters (r=8) for domain-specific representations."),
@@ -957,8 +1046,14 @@ def build_presentation():
     )
 
     out_path = os.path.join(BASE_DIR, "RGCL_Paper_Presentation.pptx")
-    prs.save(out_path)
-    print(f"Successfully generated {out_path} with {len(prs.slides)} slides!")
+    backup_path = os.path.join(BASE_DIR, "RGCL_Paper_Presentation_Updated.pptx")
+    prs.save(backup_path)
+    print(f"Successfully saved updated deck to {backup_path}")
+    try:
+        prs.save(out_path)
+        print(f"Successfully generated {out_path} with {len(prs.slides)} slides!")
+    except PermissionError:
+        print(f"Note: {out_path} is currently open in PowerPoint. Changes saved to {backup_path}")
 
 
 if __name__ == "__main__":
